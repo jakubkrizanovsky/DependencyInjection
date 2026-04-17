@@ -1,0 +1,10 @@
+{
+  "name": "com.jakubkrizanovsky.dependencyinjection",
+  "version": "1.0.0",
+  "displayName": "Dependency Injection",
+  "description": "Simple dependency injection framework package for Unity engine",
+  "author": {
+    "name": "Jakub Krizanovsky",
+    "email": "jakub.krizanovsky@gmail.com"
+  }
+}
