@@ -8,7 +8,7 @@ namespace JakubKrizanovsky.DependencyInjection
     {
 		protected override void Awake() {
 			if(DependencyInjector.TryResolve(out GlobalDependencyInjectionContext existingContext)) {
-				existingContext.DiscoverAndInject(); // Discover again using the existing context
+				existingContext.DiscoverAndInject(gameObject.scene); // Discover again using the existing context
 				return; // Do not register or discover using this context, it should already be destroyed by now anyway
 			}
 

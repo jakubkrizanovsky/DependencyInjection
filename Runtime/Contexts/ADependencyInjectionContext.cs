@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace JakubKrizanovsky.DependencyInjection
 {
@@ -12,18 +13,18 @@ namespace JakubKrizanovsky.DependencyInjection
 
         protected virtual void Awake() {
             DependencyInjector.RegisterContext(this);
-            DiscoverAndInject();
+            DiscoverAndInject(gameObject.scene);
         }
 
         private void OnDestroy() {
             DependencyInjector.UnregisterContext(this);
         }
 
-        protected void DiscoverAndInject() {
+        protected void DiscoverAndInject(Scene scene) {
             List<MonoBehaviour> injectables = new();
 
             // Scan scene hierarchy for services and injectables
-            GameObject[] rootGOs = gameObject.scene.GetRootGameObjects();
+            GameObject[] rootGOs = scene.GetRootGameObjects();
             foreach(GameObject rootGO in rootGOs) {
                 MonoBehaviour[] components = rootGO.GetComponentsInChildren<MonoBehaviour>(true);
                 foreach(MonoBehaviour component in components) {
