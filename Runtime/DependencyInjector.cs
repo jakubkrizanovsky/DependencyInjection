@@ -45,7 +45,7 @@ namespace JakubKrizanovsky.DependencyInjection
         }
 
         private static bool TryHandleLazyInject(FieldInfo field, MonoBehaviour injectable) {
-            if (field.FieldType.IsGenericType && 
+            if(field.FieldType.IsGenericType && 
                 field.FieldType.GetGenericTypeDefinition() == typeof(LazyInject<>))
             {
                 object lazyInstance = Activator.CreateInstance(field.FieldType, new object[] {injectable});
@@ -61,13 +61,34 @@ namespace JakubKrizanovsky.DependencyInjection
         }
 
         public static object Resolve(Type type, MonoBehaviour injectable){
+			if(TryResolve(type, injectable, out object service)) {
+                return service;
+			}
+
+			// Failed to find
+			Debug.LogError($"[DependencyInjector] Could not resolve dependency of type {type.Name}, " 
+                    + $"dependency resolution intiated from {injectable}");
+            return null;
+        }
+
+        public static bool TryResolve<T>(out T service, MonoBehaviour injectable = null) {
+            if(TryResolve(typeof(T), injectable, out object serviceObject)) {
+                service = (T) serviceObject;
+                return true;
+            }
+
+            service = default;
+            return false;
+        }
+
+        public static bool TryResolve(Type type, MonoBehaviour injectable, out object service){
             // Search in context of the same scene first
             ADependencyInjectorContext sameSceneContext = null;
             if(injectable != null && _injectorContextsByScene.TryGetValue(
                     injectable.gameObject.scene, out sameSceneContext)) 
             {
-                if(sameSceneContext.TryResolve(type, out object service)) {
-                    return service;
+                if(sameSceneContext.TryResolve(type, out service)) {
+                    return true;
                 }
             }
 
@@ -75,15 +96,14 @@ namespace JakubKrizanovsky.DependencyInjection
             foreach(ADependencyInjectorContext sceneContext in _injectorContexts) {
                 if(sceneContext == sameSceneContext) continue; // Do not search the same scene again
 
-                if(sceneContext.TryResolve(type, out object service)) {
-                    return service;
+                if(sceneContext.TryResolve(type, out service)) {
+                    return true;
                 }
             }
 
             // Failed to find
-            Debug.LogError($"[DependencyInjector] Could not resolve dependency of type {type.Name}, " 
-                    + $"dependency resolution intiated from {injectable}");
-            return null;
+            service = null;
+            return false;
         }
     }
 }

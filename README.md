@@ -39,9 +39,9 @@ public class ConsumerA : MonoBehaviour
 
 ## Installation
 
-Add the following line to the dependencies section of your project's `manifest.json` file. Replace `1.0.0` with the version you want to install.
+Add the following line to the dependencies section of your project's `manifest.json` file. Replace `1.1.0` with the version you want to install.
 ``` json
-"com.jakubkrizanovsky.dependencyinjection": "git+https://github.com/jakubkrizanovsky/DependencyInjection#1.0.0"
+"com.jakubkrizanovsky.dependencyinjection": "git+https://github.com/jakubkrizanovsky/DependencyInjection#1.1.0"
 ```
 
 Alternatively, you can add the Git URL directly through Unity’s Package Manager → Add package from Git URL.
@@ -143,8 +143,33 @@ The `InstantiateAndInject()` method will only inject fields on the script that i
 ### Service Proxy
 To register services from third-party packages, the `ServiceProxy` component exists. Simply add it to the same GameObject as the service and assign its `_service` attribute (will happen automatically in most cases). It will then be picked up by the framework as any other service would.
 
+### Unique Services
+Sometimes you don't want to have multiple instances of the same service registered and starting up (essentially, you want a singleton behavior from your service). That is when the `Unique` parameter of the `[Service]` attribute comes in. By setting `Unique = true` you only limit yourself to having one instance of a service of a type at a time. Any additional services of the same type will not be registered and will be destroyed before they have a chance to call their `Awake()` or `Start()` methods.
+
+``` C#
+[Service(Unique = true)]
+public class UniqueService : MonoBehaviour
+{
+    public void DoSomething() {
+        // Do something
+    }
+}
+```
+
 ### Persistent Services
-To make life easier, the `[Service]` attribute takes an optional parameter `Persistent` that defaults to `false`. If you set it to `true` the service will be added to `DontDestroyOnLoad` during the registration. 
+To make life easier, the `[Service]` attribute takes an optional parameter `Persistent` that defaults to `false`. If you set it to `true` the service will be added to `DontDestroyOnLoad` during the registration.
+
+``` C#
+[Service(Persistent = true)]
+public class PersistentService : MonoBehaviour
+{
+    public void DoSomething() {
+        // Do something
+    }
+}
+```
+
+Persistent services are unique by default, this can be overriden by manually specifying `Unique = false` in the `[Service]` attribute parameters.
 
 ### Manual Injection and Service Registation
 Sometimes, the tools of the framework might not be enough to handle injection or service registration automatically. In those cases, it can be done manually. 

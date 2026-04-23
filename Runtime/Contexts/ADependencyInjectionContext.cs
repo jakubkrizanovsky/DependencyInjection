@@ -19,7 +19,7 @@ namespace JakubKrizanovsky.DependencyInjection
             DependencyInjector.UnregisterContext(this);
         }
 
-        private void DiscoverAndInject() {
+        protected void DiscoverAndInject() {
             List<MonoBehaviour> injectables = new();
 
             // Scan scene hierarchy for services and injectables
@@ -54,6 +54,17 @@ namespace JakubKrizanovsky.DependencyInjection
         }
 
         public void RegisterService(Type type, object service) {
+            ServiceAttribute attribute = type.GetCustomAttribute<ServiceAttribute>();
+
+            // Make sure unique services only get 
+            if(attribute != null && attribute.Unique && _services.ContainsKey(type)) {
+                if(service is MonoBehaviour serviceMB) {
+                    Destroy(serviceMB);
+                }
+
+                return;
+            }
+
             _services[type] = service;
 
             foreach (Type interfaceType in type.GetInterfaces())  {
