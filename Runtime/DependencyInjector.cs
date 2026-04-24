@@ -8,17 +8,45 @@ namespace JakubKrizanovsky.DependencyInjection
 {
     public static class DependencyInjector
     {
+        private static GlobalDependencyInjectionContext _globalContext;
         private static readonly List<ADependencyInjectorContext> _injectorContexts = new();
         private static readonly Dictionary<Scene, ADependencyInjectorContext> _injectorContextsByScene = new();
 
-        public static void RegisterContext(ADependencyInjectorContext context) {
+        internal static void RegisterContext(ADependencyInjectorContext context) {
             _injectorContexts.Add(context);
             _injectorContextsByScene.Add(context.gameObject.scene, context);
+
+            if(context is GlobalDependencyInjectionContext globalContext) {
+                _globalContext = globalContext;
+            }
         }
 
-        public static void UnregisterContext(ADependencyInjectorContext context) {
+        internal static void UnregisterContext(ADependencyInjectorContext context) {
             _injectorContexts.Remove(context);
             _injectorContextsByScene.Remove(context.gameObject.scene);
+        }
+
+        public static void RegisterService(object service, bool global = false) {
+            Type type = service.GetType();
+            ADependencyInjectorContext context = null;
+
+            // Try find context of the same scene first, if not global
+            if(!global && service is MonoBehaviour serviceMB) {
+                _injectorContextsByScene.TryGetValue(serviceMB.gameObject.scene, out context);
+            }
+
+            // Use global context
+            if(context == null) {
+                context = _globalContext;
+            }
+
+            // Handle missing context
+            if(context == null) {
+                Debug.LogError("[DependencyInjector] Could not find any usable context to "
+                        + $"register service of type: {type}");
+            }
+
+            context.RegisterService(type, service);
         }
 
         public static void Inject(MonoBehaviour injectable) {
@@ -55,11 +83,6 @@ namespace JakubKrizanovsky.DependencyInjection
             return false;
         }
 
-        public static T Resolve<T>(MonoBehaviour injectable = null) {
-            object service = Resolve(typeof(T), injectable);
-            return service != null ? (T) service : default;
-        }
-
         public static object Resolve(Type type, MonoBehaviour injectable){
 			if(TryResolve(type, injectable, out object service)) {
                 return service;
@@ -71,14 +94,9 @@ namespace JakubKrizanovsky.DependencyInjection
             return null;
         }
 
-        public static bool TryResolve<T>(out T service, MonoBehaviour injectable = null) {
-            if(TryResolve(typeof(T), injectable, out object serviceObject)) {
-                service = (T) serviceObject;
-                return true;
-            }
-
-            service = default;
-            return false;
+        public static T Resolve<T>(MonoBehaviour injectable = null) {
+            object service = Resolve(typeof(T), injectable);
+            return service != null ? (T) service : default;
         }
 
         public static bool TryResolve(Type type, MonoBehaviour injectable, out object service){
@@ -92,9 +110,16 @@ namespace JakubKrizanovsky.DependencyInjection
                 }
             }
 
-            // Not found in the context of the same scene, try searching in contexts of all other scenes
+            // Search in the global context next
+            if(_globalContext.TryResolve(type, out service)) {
+                return true;
+            }
+
+            // Not found in the context of the same scene or global context
+            // Try searching in contexts of all other scenes
             foreach(ADependencyInjectorContext sceneContext in _injectorContexts) {
-                if(sceneContext == sameSceneContext) continue; // Do not search the same scene again
+                // Do not search the same scene or global again
+                if(sceneContext == sameSceneContext || sceneContext == _globalContext) continue;
 
                 if(sceneContext.TryResolve(type, out service)) {
                     return true;
@@ -103,6 +128,16 @@ namespace JakubKrizanovsky.DependencyInjection
 
             // Failed to find
             service = null;
+            return false;
+        }
+
+        public static bool TryResolve<T>(out T service, MonoBehaviour injectable = null) {
+            if(TryResolve(typeof(T), injectable, out object serviceObject)) {
+                service = (T) serviceObject;
+                return true;
+            }
+
+            service = default;
             return false;
         }
     }

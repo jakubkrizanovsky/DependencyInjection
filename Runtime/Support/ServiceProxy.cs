@@ -9,6 +9,9 @@ namespace JakubKrizanovsky.DependencyInjection
         private MonoBehaviour _service;
         public object Service => _service;
 
+        [field: SerializeField]
+        public bool Persistent {get; private set;}
+
 		private void OnValidate() {
             if(_service == null) Debug.LogError($"[ServiceRegisterer({name})] _service is null", this);
         }

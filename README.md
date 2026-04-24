@@ -48,16 +48,17 @@ Alternatively, you can add the Git URL directly through Unity’s Package Manage
 
 
 ## Setup
-Simply add an object with the `SceneDependencyInjectionContext` component to every scene, where you wish to register services or inject dependencies
+Add an object with the `GlobalDependencyInjectionContext` component to some starting scene. It uses `DontDestroyOnLoad` and will stay loaded even while changing scenes.
 
-You can also add an object with the `GlobalDependencyInjectionContext` component to some starting scene. It uses `DontDestroyOnLoad` and will stay loaded even while changing scenes
+Also add an object with the `SceneDependencyInjectionContext` component to every other scene, where you wish to register services or inject dependencies.
+
 
 ## How it works
 The `DependencyInjectionContext` in your scene will scan your scene hierarchy on its `Awake()`. Using reflection it will detect and register any services that it finds and then inject them into the right fields. It uses `[DefaultExecutionOrder(-1000)]` in order to be the first script that runs in the scene.
 
 Multiple services of each type can be registered, as long as they are managed by different context. Otherwise, only the last registered service of a type will be resolvable from a single context. 
 
-By default, services from the same scene as the object will be resolved first. If the service cannot be found within the context of the scene, contexts of all other scenes will be searched.
+By default, services from the same scene as the object will be resolved first. If the service cannot be found within the context of the scene, the global context will be searched next followed by contexts of all other loaded scenes.
 
 When the context gets destroyed (e.g. scene gets unloaded), it will automatically unregister itself and services it has registered will no longer be resolved.
 
@@ -144,7 +145,7 @@ The `InstantiateAndInject()` method will only inject fields on the script that i
 To register services from third-party packages, the `ServiceProxy` component exists. Simply add it to the same GameObject as the service and assign its `_service` attribute (will happen automatically in most cases). It will then be picked up by the framework as any other service would.
 
 ### Unique Services
-Sometimes you don't want to have multiple instances of the same service registered and starting up (essentially, you want a singleton behavior from your service). That is when the `Unique` parameter of the `[Service]` attribute comes in. By setting `Unique = true` you only limit yourself to having one instance of a service of a type at a time. Any additional services of the same type will not be registered and will be destroyed before they have a chance to call their `Awake()` or `Start()` methods.
+Sometimes you don't want to have multiple instances of the same service registered and starting up (essentially, you want a singleton behavior from your service). That is when the `Unique` parameter of the `[Service]` attribute comes in. By setting `Unique = true` you only limit yourself to having one instance of a service of a type at a time (managed by a single context). Any additional services of the same type will not be registered and will be destroyed before they have a chance to call their `Awake()` or `Start()` methods.
 
 ``` C#
 [Service(Unique = true)]
@@ -171,6 +172,8 @@ public class PersistentService : MonoBehaviour
 
 Persistent services are unique by default, this can be overriden by manually specifying `Unique = false` in the `[Service]` attribute parameters.
 
+Persistent services are always registered at the global context, to make them resolvable even after unloading the rest of the scene they were originally in.
+
 ### Manual Injection and Service Registation
 Sometimes, the tools of the framework might not be enough to handle injection or service registration automatically. In those cases, it can be done manually. 
 
@@ -189,16 +192,13 @@ public class ManualConsumer : MonoBehaviour
 }
 ```
 
-To manually register a service, you need to somehow obtain a reference to the context first. The context itself is registered as a service, so you can use the framework itself to resolve it, or use some other way (e.g. `[SerializeField]`). Then simply use its `RegisterService()` method to register your service.
+To manually register a service, simply use the `RegisterService()` method of the `DependencyInjector` class. It will automatically search for the best context to register it at. You can also set the optional `global` bool parameter to register it at the global context.
 
 ``` C#
 public class ManualService : MonoBehaviour
 {
-    [Inject]
-    private IDependencyInjectorContext _context;
-
     public void RegisterService() {
-        _context.RegisterService(this);
+        DependencyInjector.RegisterService(this);
     }
 }
 ```

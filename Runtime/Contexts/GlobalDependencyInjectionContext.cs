@@ -1,3 +1,5 @@
+using System;
+using System.Reflection;
 using UnityEngine;
 
 namespace JakubKrizanovsky.DependencyInjection
@@ -13,8 +15,16 @@ namespace JakubKrizanovsky.DependencyInjection
 			}
 
 			base.Awake();
-			transform.parent = null;
-            DontDestroyOnLoad(gameObject);
+		}
+
+		internal override void RegisterService(Type type, object service) {
+			base.RegisterService(type, service);
+
+			// Handle service persistence
+			ServiceAttribute attribute = type.GetCustomAttribute<ServiceAttribute>();
+            if(attribute != null && attribute.Persistent) {
+                MakePersistent(service);
+            }
 		}
     }
 }
