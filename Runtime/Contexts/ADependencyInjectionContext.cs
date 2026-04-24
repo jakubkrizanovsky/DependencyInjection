@@ -65,7 +65,7 @@ namespace JakubKrizanovsky.DependencyInjection
             RegisterService(service.GetType(), service);
         }
 
-        internal virtual void RegisterService(Type type, object service) {
+        internal void RegisterService(Type type, object service) {
             ServiceAttribute attribute = type.GetCustomAttribute<ServiceAttribute>();
 
             // Make sure unique services only get registered once
@@ -79,8 +79,13 @@ namespace JakubKrizanovsky.DependencyInjection
 
             _services[type] = service;
 
-            foreach (Type interfaceType in type.GetInterfaces())  {
+            foreach(Type interfaceType in type.GetInterfaces())  {
                 _services[interfaceType] = service;
+            }
+
+            // Handle service persistence
+            if(attribute != null && attribute.Persistent) {
+                MakePersistent(service);
             }
         }
 
@@ -88,7 +93,7 @@ namespace JakubKrizanovsky.DependencyInjection
             return _services.TryGetValue(type, out service);
         }
 
-        protected void MakePersistent(object service) {
+        private void MakePersistent(object service) {
             if(service is MonoBehaviour serviceMB) {
                 serviceMB.transform.parent = null;
                 DontDestroyOnLoad(serviceMB.gameObject);

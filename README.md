@@ -39,9 +39,9 @@ public class ConsumerA : MonoBehaviour
 
 ## Installation
 
-Add the following line to the dependencies section of your project's `manifest.json` file. Replace `1.1.1` with the version you want to install.
+Add the following line to the dependencies section of your project's `manifest.json` file. Replace `1.2.1` with the version you want to install.
 ``` json
-"com.jakubkrizanovsky.dependencyinjection": "git+https://github.com/jakubkrizanovsky/DependencyInjection#1.1.1"
+"com.jakubkrizanovsky.dependencyinjection": "git+https://github.com/jakubkrizanovsky/DependencyInjection#1.2.1"
 ```
 
 Alternatively, you can add the Git URL directly through Unity’s Package Manager → Add package from Git URL.

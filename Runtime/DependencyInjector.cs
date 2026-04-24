@@ -111,7 +111,7 @@ namespace JakubKrizanovsky.DependencyInjection
             }
 
             // Search in the global context next
-            if(_globalContext.TryResolve(type, out service)) {
+            if(_globalContext != null && _globalContext.TryResolve(type, out service)) {
                 return true;
             }
 

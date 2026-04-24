@@ -16,15 +16,5 @@ namespace JakubKrizanovsky.DependencyInjection
 
 			base.Awake();
 		}
-
-		internal override void RegisterService(Type type, object service) {
-			base.RegisterService(type, service);
-
-			// Handle service persistence
-			ServiceAttribute attribute = type.GetCustomAttribute<ServiceAttribute>();
-            if(attribute != null && attribute.Persistent) {
-                MakePersistent(service);
-            }
-		}
     }
 }
